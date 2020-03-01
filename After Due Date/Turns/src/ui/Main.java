@@ -10,14 +10,14 @@ public class Main {
 	 * Executable main method.
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args){
 		inputNum = new Scanner(System.in);
 		int opt = 0;
 		boolean menu = true;
 		System.out.println("Welcome to turn manager software - Console UI version");
 		TurnManager tm = new TurnManager();
 		
-		while(menu) {
+		while(menu) {			
 			System.out.println("--------------------\nCurrent turn: " + tm.getCurrentTurnStr());
 			System.out.println("--------------------\nMenu:\n");			
 			System.out.println("1. Register new user.");
@@ -62,22 +62,21 @@ public class Main {
 		String data = "";
 		String[] splitData;
 		char[] charArrayData;
-		boolean check = false;
+		boolean check = false;		
 		
-		
-		
-		System.out.println("\n\nType the user information as follows (Add all 5 (;))");
-		System.out.println("NAME;SURNAME;DOCUMENT TYPE;DOCUMENT NUMBER;PHONE NUMBER;ADDRESS\n");
+		System.out.println("\n\nType the user information as follows, adding all ';'");
+		System.out.println("(NAME;SURNAME;DOCUMENT TYPE;DOCUMENT NUMBER;PHONE NUMBER;ADDRESS)\n");
 		
 		String[] types = tm.getDocumentTypes();
 		System.out.println("Valid document types:");
 		for (int i = 0; i<types.length;i++) {
-			System.out.printf(types[i] + "/");
+			System.out.printf("(" +types[i] + ")");
 		}
 		System.out.println("\n");
 		
 		data = inputStr.nextLine();		
 		
+		//Processes input
 		data = " " + data;
 		charArrayData = data.toCharArray();
 		String [] stringArrayData = new String[charArrayData.length];
@@ -89,6 +88,7 @@ public class Main {
 				stringArrayData[i] = "; ";
 			}
 		}
+		
 		data = "";
 		for (int i =0; i < stringArrayData.length; i++) {
 			data += stringArrayData[i];
@@ -108,7 +108,8 @@ public class Main {
 				check = true;
 			}
 		}
-		//If is empty it lets it through.		
+		
+		//If is empty it lets it through to throw missing information exception.		
 		if (splitData[2].isEmpty()) {
 			check = true;
 		}
@@ -146,14 +147,17 @@ public class Main {
 		String[] splitData;
 		String turn = "";
 		
-		System.out.println("Valid document types:");
-		for (int i = 0; i<types.length;i++) {
-			System.out.printf(types[i] + ";");
-		}
+		
 		
 		System.out.println("\nType the user information as follows:");
-		System.out.println("DOCUMENT TYPE;DOCUMENT NUMBER\n");
-		
+		System.out.println("(DOCUMENT TYPE;DOCUMENT NUMBER)\n");
+		 
+		System.out.println("Valid document types:");
+		for (int i = 0; i<types.length;i++) {
+			System.out.print("("+ types[i] + ")");
+		}
+		System.out.println("\n");
+		//Processes the input.
 		data = inputStr.nextLine();
 		data += " ";
 		splitData = data.split(";");
@@ -167,7 +171,7 @@ public class Main {
 			}
 		}
 		
-		//If is empty it lets it through.		
+		//If is empty it lets it through to throw missing information exception.		
 		if (splitData[1].isEmpty()) {
 			check = false;
 			System.out.println("Error: Document number is missing.");
@@ -180,6 +184,9 @@ public class Main {
 				
 			}
 			catch(UserNotFoundException ex){
+				System.out.println("Error: " + ex.getMessage());
+			}
+			catch(UserAlreadyHasTurnException ex){
 				System.out.println("Error: " + ex.getMessage());
 			}
 		}
@@ -195,13 +202,10 @@ public class Main {
 	 */
 	public static TurnManager advanceTurn(TurnManager tm){
 		int opt = 0;
-		TurnManager tmSave = tm;
+		
 		boolean check = false;
 		inputNum = new Scanner(System.in);	
-		try {
-			tm.advanceTurn();
-			tm = tmSave;
-			do {
+		do {
 				System.out.println("User is present?");
 				System.out.println("1. Yes");
 				System.out.println("2. No");
@@ -231,14 +235,8 @@ public class Main {
 					break;
 					default:
 				}
-			}while(!check);
-		}
-		catch(NoAssignedTurnsException ex) {
-			System.out.println("Error: " + ex.getMessage());
-		}
-					
+		}while(!check);	
+		
 		return tm;		
 	}
-	
-
 }

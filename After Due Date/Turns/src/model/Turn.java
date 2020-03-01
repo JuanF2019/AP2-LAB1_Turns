@@ -51,8 +51,7 @@ public class Turn {
 	 * Compares turn to a given turn. Only compares letter and number.
 	 * @param turn2 Turn to compare.
 	 * @return equals True if both letter and number attributes are equal, else is false.
-	 */
-	
+	 */	
 	public boolean isEqualTurn(Turn turn2) {
 		boolean equals = false;
 		if(letter == turn2.getLetter() && number == turn2.getNumber()) {

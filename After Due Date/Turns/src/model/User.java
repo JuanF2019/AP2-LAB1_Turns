@@ -84,7 +84,12 @@ public class User {
 	 * @return assignedTurn Assigned turn as a String, null if no assigned turn.
 	 */
 	public String getAssignedTurnStr() {
-		return assignedTurn.getTurn();
+		if(assignedTurn!= null) {
+			return assignedTurn.getTurn();
+		}
+		else {
+			return "No assigned turn!";
+		}
 	}
 	/**
 	 * Assigns a turn to the user.

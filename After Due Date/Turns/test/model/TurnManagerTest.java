@@ -38,6 +38,35 @@ class TurnManagerTest {
 		}
 	}
 	
+	void setup4() {
+		tm = new TurnManager();		
+		try {
+			tm.addUser("Juan","Martinez","CC","1234","","");
+			tm.addUser("Pepito","Perez","CE","3456","","");
+			tm.addUser("Lucas","Garcia","CC","5862","","");
+		}
+		catch(UserAlreadyExistsException ex) {
+			
+		}
+		catch(MissingInformationException ex){
+			
+		}
+		
+		ArrayList<Turn> turns = tm.getTurns();
+		Turn tempTurn;
+		ArrayList<User> users = tm.getUsers();
+		User tempUser;
+		tempUser = users.get(0);
+		tempTurn = turns.get(0);
+		
+		tempTurn.setAvailable(false);
+		tempUser.setAssignedTurn(tempTurn);
+		
+		tm.setUsers(users);
+		tm.setTurns(turns);
+			
+	}
+	
 	@Test
 	void testAddUser1() {
 		setup1();
@@ -262,5 +291,46 @@ class TurnManagerTest {
 		int i = tm.getTurnPos(turn);
 		
 		assertEquals(99,i);		
+	}
+	
+	@Test
+	void testAssignTurn1() {
+		setup3();
+		
+		try {
+			tm.assignTurn("CC", "1234");
+		}
+		catch(UserNotFoundException ex) {
+			fail();
+		}
+		catch(UserAlreadyHasTurnException ex) {
+			fail();
+		}
+		ArrayList<User> users = tm.getUsers();
+		ArrayList<Turn> turns = tm .getTurns();
+		
+		assertEquals("A00",(users.get(0)).getAssignedTurnStr());		
+		assertEquals(false,turns.get(0).isAvailable());
+	}
+	
+	@Test
+	void testAssignTurn2() {
+		setup4();
+		
+		try {
+			tm.assignTurn("CE", "3456");
+		}
+		catch(UserNotFoundException ex) {
+			fail();
+		}
+		catch(UserAlreadyHasTurnException ex) {
+			fail();
+		}
+		
+		ArrayList<User> users = tm.getUsers();
+		ArrayList<Turn> turns = tm .getTurns();
+		
+		assertEquals("A01",(users.get(1)).getAssignedTurnStr());		
+		assertEquals(false,turns.get(1).isAvailable());		
 	}
 }
