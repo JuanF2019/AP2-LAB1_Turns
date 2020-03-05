@@ -1,2 +1,2 @@
-# AP2-LAB1_Turns
-AP2 Laboratory 1
+# turns
+Basic turn managing program, includes turns with format A00 and saving user data.
