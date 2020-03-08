@@ -67,6 +67,60 @@ class TurnManagerTest {
 			
 	}
 	
+	void setup5() {
+		tm = new TurnManager();		
+		try {
+			tm.addUser("Juan","Martinez","CC","1234","","");
+			tm.addUser("Pepito","Perez","CE","3456","","");
+			tm.addUser("Lucas","Garcia","CC","5862","","");
+		}
+		catch(UserAlreadyExistsException ex) {
+			
+		}
+		catch(MissingInformationException ex){
+			
+		}
+		
+		tm.addType("Lunch", 5);
+		tm.addType("Dinner", 3);
+		
+	}
+	
+	@Test
+	void testAssignTurn3() {
+		setup5();
+		
+		
+		
+		try {
+			tm.assignTurn("CC","1234", 1);
+			tm.assignTurn("CE","3456", 0);
+		}
+		catch(UserNotFoundException ex) {
+			fail();
+		}
+		catch(UserAlreadyHasTurnException ex){
+			fail();
+		}
+		catch(InvalidTypeException ex) {
+			fail();
+		}
+		
+		ArrayList<User> users = tm.getUsers();
+		User user = users.get(0);
+		Turn turn = user.getAssignedTurn();
+		TurnType type = turn.getType();
+		
+		assertEquals(type.getName(),"Dinner");
+		
+		user = users.get(1);
+		turn = user.getAssignedTurn();
+		type = turn.getType();
+		
+		assertEquals(type.getName(),"Lunch");
+		
+	}
+	
 	@Test
 	void testAddUser1() {
 		setup1();
@@ -292,7 +346,7 @@ class TurnManagerTest {
 		
 		assertEquals(99,i);		
 	}
-	
+	/*
 	@Test
 	void testAssignTurn1() {
 		setup3();
@@ -333,4 +387,5 @@ class TurnManagerTest {
 		assertEquals("A01",(users.get(1)).getAssignedTurnStr());		
 		assertEquals(false,turns.get(1).isAvailable());		
 	}
+	*/
 }

@@ -7,6 +7,7 @@ public class Turn {
 	public final static char MIN_LETTER = 'A';
 	private char letter;
 	private int number;
+	private TurnType type;
 	private boolean available;
 	/**
 	 * Constructs a new turn given its letter, number and availability.
@@ -14,16 +15,17 @@ public class Turn {
 	 * @param n Number
 	 * @param a Available
 	 */
-	public Turn(char l, int n, boolean a) {
+	public Turn(char l, int n, boolean a, TurnType t) {
 		letter = l;
 		number = n;
 		available = a;
+		type = t;
 	}
 	/**
 	 * Returns a String representing the turn combining letter and number.
 	 * @return turn Turn as a String combining letter and number.
 	 */
-	public String getTurn(){
+	public String toString(){
 		String n = "";
 		if (number<10) {
 			n = "0" + number;
@@ -31,7 +33,7 @@ public class Turn {
 		else {
 			n =  "" + number;
 		}
-		return letter + n;
+		return letter + n + "- Type: " + type.getName();
 	}
 	/**
 	 * Returns turn availability.
@@ -72,5 +74,11 @@ public class Turn {
 	 */
 	public int getNumber() {
 		return number;
+	}
+	public void setType(TurnType type) {
+		this.type = type;
+	}
+	public TurnType getType() {
+		return type;
 	}
 }

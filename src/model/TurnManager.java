@@ -6,6 +6,7 @@ public class TurnManager {
 	private Turn currentTurn;	
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
+	private ArrayList<TurnType> types;
 	/**
 	 * Constructs an empty users list, sets current turn to null and fills turns list with available turns.<br>
 	 * <b>POS:</b><br>1. Users list initialized.<br>
@@ -17,10 +18,11 @@ public class TurnManager {
 		turns = new ArrayList<Turn>();
 		for(int j = (int)Turn.MIN_LETTER; j <= (int)Turn.MAX_LETTER;j++ ) {
 			for (int k = Turn.MIN_NUMBER; k <= Turn.MAX_NUMBER; k++) {
-				turns.add(new Turn((char)j,k,true));
+				turns.add(new Turn((char)j,k,true,null));//Turns in turn lists have no type unless is assigned.
 			}
 		}					
 		currentTurn = null;
+		types = new ArrayList<TurnType>();
 	}
 	
 	/**
@@ -158,13 +160,22 @@ public class TurnManager {
 		return pos;
 	}
 	/**
+	 * 
+	 * @param description
+	 * @param duration
+	 */
+	public void addType(String description,float duration) {
+		types.add(new TurnType(description,duration));
+	}
+	
+	/**
 	 * Assigns a turn to a existing user.
 	 * @param dT Document type
 	 * @param dN Document number
 	 * @return message Message with turn represented as a String.
 	 * @throws UserNotFoundException If the user with the given document type and number was not found.
 	 */
-	public String assignTurn(String dT, String dN) throws UserNotFoundException, UserAlreadyHasTurnException{
+	public String assignTurn(String dT, String dN, int type) throws UserNotFoundException, UserAlreadyHasTurnException, InvalidTypeException{
 		User user;
 		Turn turn;
 		
@@ -177,23 +188,28 @@ public class TurnManager {
 			turn = turns.get(turnPos);
 			
 			if(user.getAssignedTurn() == null && turnPos !=-1) {
-				
-				turn.setAvailable(false);
-				user.setAssignedTurn(turn);				
-				
-				users.set(userPos,user); //Updates users lists.
-								
-				turns.set(turnPos,turn); //Updates turns lists.
+				if(type >= 0 && type<types.size()) {
+					turn.setAvailable(false);
+					turn.setType(types.get(type));
+					user.setAssignedTurn(turn);				
+					
+					users.set(userPos,user); //Updates users lists.
+									
+					turns.set(turnPos,turn); //Updates turns lists.
+				}
+				else {
+					throw new InvalidTypeException(type,types.size());
+				}
 					
 			}
 			else {
-				throw new UserAlreadyHasTurnException(dT,dN,user.getAssignedTurnStr());
+				throw new UserAlreadyHasTurnException(dT,dN,user.toStringTurn());
 			}
 		}	
 		else {
 			throw new UserNotFoundException(dT,dN);
 		}
-		return user.getAssignedTurnStr();
+		return user.toStringTurn();
 	}
 	/**
 	 * Advances turn to the next one if the next turn is assigned.<br>
@@ -214,12 +230,12 @@ public class TurnManager {
 			tempUser.setAssignedTurn(null);
 			
 			currentTurn = tempTurn;
-			System.out.println("userPos = " + userPos);
+			//System.out.println("userPos = " + userPos);
 						
 			users.set(userPos, tempUser);
-			System.out.println(users.get(0).getName());
-			System.out.println(users.get(1).getName());
-			System.out.println(users.get(2).getName());
+			//System.out.println(users.get(0).getName());
+			//System.out.println(users.get(1).getName());
+			//System.out.println(users.get(2).getName());
 			
 		}
 		else if(currentTurn != null 
@@ -289,7 +305,7 @@ public class TurnManager {
 	public String getCurrentTurnStr() {
 		String msg = null;
 		if (currentTurn != null) {
-			msg = currentTurn.getTurn();
+			msg = currentTurn.toString();
 		}
 		else {
 			msg = "No current turn.";
@@ -324,6 +340,7 @@ public class TurnManager {
 	public void setCurrentTurn(Turn currentTurn) {
 		this.currentTurn = currentTurn;
 	}
+	
 	
 	
 	

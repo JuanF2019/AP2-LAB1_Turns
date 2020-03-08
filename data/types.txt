@@ -1,0 +1,9 @@
+Lunch;3
+Breakfast;3
+Dinner;3
+Pay;7
+Support;10
+Loan;20
+Card;20
+
+

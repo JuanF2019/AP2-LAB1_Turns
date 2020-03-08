@@ -13,6 +13,7 @@ public class User {
 	private String phoneNumber;
 	private String address;
 	private Turn assignedTurn;
+	private Restriction restriction;
 	/**
 	 * Creates a new user given its name, surname, document type, document number, phone number and address.
 	 * @param n Name.
@@ -30,6 +31,7 @@ public class User {
 		phoneNumber = p;
 		address = a;
 		assignedTurn = null;
+		restriction = null;
 	}
 	/**
 	 * Returns the user name.
@@ -83,9 +85,9 @@ public class User {
 	 * Returns assigned turn as a String, returns null if there is no assigned turn.
 	 * @return assignedTurn Assigned turn as a String, null if no assigned turn.
 	 */
-	public String getAssignedTurnStr() {
+	public String toStringTurn() {
 		if(assignedTurn!= null) {
-			return assignedTurn.getTurn();
+			return assignedTurn.toString();
 		}
 		else {
 			return "No assigned turn!";
@@ -105,4 +107,13 @@ public class User {
 	public Turn getAssignedTurn() {
 		return assignedTurn;
 	}	
+	
+	public int getRestrictionDuration() {
+		if(restriction != null) {
+			return restriction.getDuration();
+		}
+		else {
+			return 0;
+		}
+	}
 }
