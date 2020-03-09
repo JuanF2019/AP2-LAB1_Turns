@@ -7,6 +7,8 @@ public class TurnManager {
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
 	private ArrayList<TurnType> types;
+	private DateTime currentDateTime;
+	private int timeDifference;
 	/**
 	 * Constructs an empty users list, sets current turn to null and fills turns list with available turns.<br>
 	 * <b>POS:</b><br>1. Users list initialized.<br>
@@ -23,6 +25,8 @@ public class TurnManager {
 		}					
 		currentTurn = null;
 		types = new ArrayList<TurnType>();
+		currentDateTime = DateTime.now();
+		timeDifference = 0;
 	}
 	
 	/**
@@ -146,7 +150,7 @@ public class TurnManager {
 	 * @param turn Turn to get its position.
 	 * @return position Position in the turns list
 	 */
-	public int getTurnPos(Turn turn) {
+	public int getTurnPos(Turn turn) {//Change isEqualTurn method to compareTo.
 		int pos = -1;
 		boolean check = false;
 		
@@ -341,6 +345,21 @@ public class TurnManager {
 		this.currentTurn = currentTurn;
 	}
 	
+	public void autoUpdateDateTime(int option) {
+		currentDateTime = DateTime.now();
+		currentDateTime.plusMinutes((long)timeDifference);
+	}
+	
+	public void manualUpdateDateTime(int year, int month, int day, int hour, int minutes, int seconds)throws DateTimeException {
+		DateTime tempDateTime = new DateTime(year,month,day,hour,minutes,seconds);
+		
+		if (tempDateTime.compareTo(currentDateTime) == 1) {
+			currentDateTime = tempDateTime;
+		}
+		else {
+			throw new DateTimeException(currentDateTime, tempDateTime);
+		}
+	}
 	
 	
 	

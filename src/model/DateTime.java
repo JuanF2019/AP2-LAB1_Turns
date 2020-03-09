@@ -2,7 +2,7 @@ package model;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-public class DateTime{
+public class DateTime implements Comparable<DateTime>{
 	
 	private LocalDate date;
 	private LocalTime time;
@@ -38,8 +38,41 @@ public class DateTime{
 		date.plusDays(daysToAdd);
 	}
 	
+	public void plusMinutes(long minutesToAdd) {
+		date.plusDays(minutesToAdd*(1/60)*24);
+	}
+	
 	public static DateTime now() {
 		return new DateTime();
+	}
+	
+	private LocalDate getDate() {
+		return date;
+	}
+	
+	private LocalTime getTime() {
+		return time;
+	}
+	
+	@Override
+	public int compareTo(DateTime dateTime1) {
+		int comparable = 0;
+		if(date.isAfter(dateTime1.getDate())) {
+			comparable = 1;
+		}else if(date.isBefore(dateTime1.getDate())) {
+			comparable = -1;
+		}else {
+			if(time.isAfter(dateTime1.getTime())) {
+				comparable = 1;
+			}
+			else if(time.isBefore(dateTime1.getTime())) {
+				comparable = -1;
+			}
+			else {
+				comparable = 0;
+			}
+		}
+		return comparable;
 	}
 	
 	
