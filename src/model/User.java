@@ -1,6 +1,8 @@
 package model;
+import java.io.Serializable;
 
-public class User {	
+@SuppressWarnings("serial")
+public class User implements Serializable{	
 	public final static String CEDULA_DE_CIUDADANIA = "CC";
 	public final static String TARJETA_DE_IDENTIDAD = "TI";
 	public final static String CEDULA_DE_EXTRANJERIA = "CE";
@@ -13,7 +15,9 @@ public class User {
 	private String phoneNumber;
 	private String address;
 	private Turn assignedTurn;
+	private boolean[] attended;
 	private Restriction restriction;
+	private String pastTurns;
 	/**
 	 * Creates a new user given its name, surname, document type, document number, phone number and address.
 	 * @param n Name.
@@ -32,6 +36,8 @@ public class User {
 		address = a;
 		assignedTurn = null;
 		restriction = null;
+		attended = new boolean[2];
+		pastTurns = "";
 	}
 	/**
 	 * Returns the user name.
@@ -108,12 +114,33 @@ public class User {
 		return assignedTurn;
 	}	
 	
-	public int getRestrictionDuration() {
+	public double getRestrictionDuration() {
 		if(restriction != null) {
 			return restriction.getDuration();
 		}
 		else {
 			return 0;
 		}
+	}
+	public boolean[] getAttended() {
+		return attended;
+	}	
+	
+	public void setRestriction(double days) {
+		restriction = new Restriction(days);
+	}
+	
+	public void setRestriction() {
+		restriction = null;
+		attended[0] = true;
+		attended[1] = true;
+	}
+	
+	public void addPastTurn(String turn) {
+		pastTurns += turn + "\n";
+	}
+	
+	public String getPastTurns() {
+		return pastTurns;
 	}
 }

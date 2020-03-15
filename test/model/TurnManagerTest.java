@@ -1,4 +1,5 @@
 package model;
+import java.io.IOException;
 import java.util.*;
 import customExceptions.*;
 
@@ -63,8 +64,7 @@ class TurnManagerTest {
 		tempUser.setAssignedTurn(tempTurn);
 		
 		tm.setUsers(users);
-		tm.setTurns(turns);
-			
+		tm.setTurns(turns);			
 	}
 	
 	void setup5() {
@@ -103,6 +103,9 @@ class TurnManagerTest {
 			fail();
 		}
 		catch(InvalidTypeException ex) {
+			fail();
+		} 
+		catch (NoAvailableTurnsException e) {
 			fail();
 		}
 		
@@ -204,17 +207,111 @@ class TurnManagerTest {
 	}
 	
 	@Test
-	void testFindUserByDTDN1() {
+	void testFindUserByDN1() {
 		setup3();
 		int i = 0;
 		try {
-			i = tm.findUserByDTDN("CE","3456");
+			i = tm.findUserByDN("3456");
 		}
 		catch(UserNotFoundException ex){
 			fail();
 		}			
 		assertEquals(1,i);
 	}
+	
+	@Test
+	void testFindUserByDN2() {
+		setup2();		
+		try {
+			int i = tm.findUserByDN("3456");
+			System.out.println(i);
+		}
+		catch(UserNotFoundException ex){
+			assertTrue(true);
+		}		
+	}
+	
+	void setup11() {
+		tm = new TurnManager();
+		try {
+			tm.addUser("Juan","Martinez","CC","7234","","");
+			tm.addUser("Pepito","Perez","CE","3456","","");
+			tm.addUser("Lucas","Garcia","CC","2862","","");
+		}
+		catch(UserAlreadyExistsException ex) {
+			
+		}
+		catch(MissingInformationException ex){
+			
+		}
+	}
+	@Test
+	void testFindUserByDN3() {
+		setup11();		
+		try {
+			int i = tm.findUserByDN("3456");
+			assertEquals(1,i);
+			i = tm.findUserByDN("2862");
+			assertEquals(0,i);
+		}
+		catch(UserNotFoundException ex){
+			fail();			
+		}		
+		
+	}
+	@Test
+	void testBubbleSortByDN() {
+		setup11();
+		tm.bubbleSortUsersByDN();
+		ArrayList<User> users = tm.getUsers();				
+		assertEquals("2862",users.get(0).getDocumentNumber());
+		assertEquals("3456",users.get(1).getDocumentNumber());
+		assertEquals("7234",users.get(2).getDocumentNumber());
+	}
+	void setup10() {
+		tm = new TurnManager();
+	}
+	@Test
+	void testGenerateRandomTurns2() {
+		setup10();
+		tm.addType("Lunch", 2);
+		tm.addType("Dinner", 3);
+		try {
+			tm.generateRandomUsers(10);
+		} catch (IOException e) {
+			fail();
+		}
+		tm.generateRandomTurns(10);
+		
+		ArrayList<User> users = tm.getUsers();		
+		for(int i = 0; i<users.size();i++) {
+			
+			System.out.println(users.get(i).getName() + " - " + users.get(i).toStringTurn());
+		}
+		
+	}
+	@Test
+	void testGenerateRandomUsers() {
+		setup10();
+		try {
+			tm.generateRandomUsers(10);
+			tm.generateRandomUsers(10);
+		} catch (IOException e) {
+			fail();
+		}
+		
+		ArrayList<User> users = tm.getUsers();		
+		for(int i = 0; i<users.size();i++) {
+			System.out.println(users.get(i).getName() + " - " + users.get(i).getDocumentNumber());
+		}
+	}
+	
+	@Test 
+	void testGenerateRandomTurns() {
+		
+	}
+	
+	
 	
 	@Test
 	void testFindUserByTurn1() {
@@ -388,4 +485,40 @@ class TurnManagerTest {
 		assertEquals(false,turns.get(1).isAvailable());		
 	}
 	*/
+	
+	@Test
+	void testTurnManager() {
+		tm = new TurnManager();
+		
+		ArrayList<String> rawTurns = tm.getRawTurns();
+		
+		for(int i =0; i<rawTurns.size(); i++) {
+			System.out.println(rawTurns.get(i));
+		}
+		
+		
+		
+	}
+	
+	@Test
+	void testAssignTurn() {
+		setup5();
+		
+		try {
+			tm.assignTurn("CC", "1234", 0);
+			tm.assignTurn("CE", "3456", 0);
+		} catch (NoAvailableTurnsException | UserNotFoundException | UserAlreadyHasTurnException
+				| InvalidTypeException e) {
+			fail();
+		}
+		
+		ArrayList<Turn> turns = tm.getTurns();
+		
+		
+		
+		assertEquals(turns.get(0).toString(),"A00 - Type: Lunch");
+		assertEquals(turns.get(1).toString(),"A01 - Type: Lunch");
+		
+		
+	}
 }

@@ -1,6 +1,8 @@
 package model;
+import java.io.Serializable;
 
-public class Turn {
+@SuppressWarnings("serial")
+public class Turn implements Comparable<Turn>,Serializable {
 	public final static int MAX_NUMBER = 99;
 	public final static int MIN_NUMBER = 0;
 	public final static char MAX_LETTER = 'Z';
@@ -8,17 +10,16 @@ public class Turn {
 	private char letter;
 	private int number;
 	private TurnType type;
-	private boolean available;
+	
 	/**
 	 * Constructs a new turn given its letter, number and availability.
 	 * @param l Letter
 	 * @param n Number
 	 * @param a Available
 	 */
-	public Turn(char l, int n, boolean a, TurnType t) {
+	public Turn(char l, int n, TurnType t) {
 		letter = l;
-		number = n;
-		available = a;
+		number = n;		
 		type = t;
 	}
 	/**
@@ -33,33 +34,33 @@ public class Turn {
 		else {
 			n =  "" + number;
 		}
-		return letter + n + "- Type: " + type.getName();
-	}
-	/**
-	 * Returns turn availability.
-	 * @return available Turn availability
-	 */
-	public boolean isAvailable() {
-		return available;
-	}
-	/**
-	 * Sets turn availability to the given value.
-	 * @param available Turn availability
-	 */
-	public void setAvailable(boolean available) {
-		this.available = available;
-	}
+		return letter + n + " - Type: " + type.getName();
+	}	
 	/**
 	 * Compares turn to a given turn. Only compares letter and number.
 	 * @param turn2 Turn to compare.
 	 * @return equals True if both letter and number attributes are equal, else is false.
 	 */	
-	public boolean isEqualTurn(Turn turn2) {
-		boolean equals = false;
-		if(letter == turn2.getLetter() && number == turn2.getNumber()) {
-			equals = true;
-		}		
-		return equals;
+	public int compareTo(Turn turn2) {
+		int comparable = 0;
+		if((int)letter > (int)turn2.getLetter()) {
+			comparable = 1;
+		}	
+		else if((int)letter < (int)turn2.getLetter()) {
+			comparable = -1;
+		}
+		else {
+			if(number > turn2.getNumber()) {
+				comparable = 1;
+			}
+			else if(number < turn2.getNumber()) {
+				comparable = -1;
+			}
+			else {
+				comparable = 0;
+			}
+		}
+		return comparable;
 	}
 	/**
 	 * Return turn letter.
@@ -75,10 +76,24 @@ public class Turn {
 	public int getNumber() {
 		return number;
 	}
+	/**
+	 * 
+	 * @param type
+	 */
 	public void setType(TurnType type) {
 		this.type = type;
 	}
+	/**
+	 * 
+	 * @return
+	 */
 	public TurnType getType() {
 		return type;
+	}
+	public void setLetter(char letter) {
+		this.letter = letter;
+	}
+	public void setNumber(int number) {
+		this.number = number;
 	}
 }

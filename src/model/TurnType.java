@@ -1,6 +1,7 @@
 package model;
-
-public class TurnType {
+import java.io.Serializable;
+@SuppressWarnings("serial")
+public class TurnType implements Serializable{
 	private String name;
 	private float duration;
 	/**
@@ -27,5 +28,7 @@ public class TurnType {
 		return duration;
 	}
 	
-	
+	public String toString() {
+		return name + " - " + duration + " minutes";
+	}
 }

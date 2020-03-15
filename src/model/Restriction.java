@@ -1,24 +1,24 @@
 package model;
 
-public class Restriction {
-	private int duration;//In days.
-	private DateTime limitDateTime;
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class Restriction implements Serializable {
+	private double duration;
 	
-	public Restriction(int d, DateTime currentTime) {
-		duration = d;
-		currentTime.plusDays(d);
-		limitDateTime = currentTime;
+	public Restriction(double d) {
+		duration = d*24*60;		
 	}
 
-	public int getDuration() {
+	public double getDuration() {
 		return duration;
 	}
-
-	public void setDuration(int duration) {
-		this.duration = duration;
-	}
+	
+	public void decreaseDuration(double minutes) {
+		duration -= minutes;
+	}	
 	
 	public String toString() {
-		return "Current restriction for " + duration + " days, until " + limitDateTime.toString();
+		return "Remainin restriction time: " + (duration/60)/24 + "days";
 	}
 }

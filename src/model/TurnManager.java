@@ -1,49 +1,42 @@
 package model;
-import customExceptions.*;
-import java.util.ArrayList;
 
-public class TurnManager {
+import customExceptions.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
+public class TurnManager implements Serializable {	
+	private static final long serialVersionUID = 1989870631771348650L;
 	private Turn currentTurn;	
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
+	private ArrayList<String> rawTurns;
 	private ArrayList<TurnType> types;
-	private DateTime currentDateTime;
+	private Date currentSystemDate;
 	private int timeDifference;
-	/**
-	 * Constructs an empty users list, sets current turn to null and fills turns list with available turns.<br>
-	 * <b>POS:</b><br>1. Users list initialized.<br>
-	 * 2. Current turn set to null.<br>
-	 * 3. Turn list filled with available turns. 
-	 */
+	private int rawTurnIndex;
+		
 	public TurnManager() {
+		currentTurn = null;
 		users = new ArrayList<User>();
-		turns = new ArrayList<Turn>();
+		turns = new ArrayList<Turn>();		
+		types = new ArrayList<TurnType>();
+		currentSystemDate = Date.now();
+		timeDifference = 0;
+		rawTurnIndex = 0;
+		rawTurns = new ArrayList<String>();
 		for(int j = (int)Turn.MIN_LETTER; j <= (int)Turn.MAX_LETTER;j++ ) {
 			for (int k = Turn.MIN_NUMBER; k <= Turn.MAX_NUMBER; k++) {
-				turns.add(new Turn((char)j,k,true,null));//Turns in turn lists have no type unless is assigned.
+				rawTurns.add((char)j + ";" + k);//
 			}
-		}					
-		currentTurn = null;
-		types = new ArrayList<TurnType>();
-		currentDateTime = DateTime.now();
-		timeDifference = 0;
-	}
+		}
+	}		
 	
-	/**
-	 * Adds a new user given its name, surname, document type, document number, phone number and address, if the user does not already exists.
-	 * @param n Name.
-	 * @param s Surname.
-	 * @param dT Document type.
-	 * @param dN Document number.
-	 * @param p Phone number.
-	 * @param a Address.
-	 * @throws UserAlreadyExistsException
-	 * 
-	 */
 	public void addUser(String n, String s, String dT, String dN, String p,	String a) throws UserAlreadyExistsException, MissingInformationException{
 		try {	
-			findUserByDTDN(dT,dN);//Throws UserNotFoundException,if is thrown then user does not exist and can be added. 
-			throw new UserAlreadyExistsException(dT,dN);			
+			findUserByDN(dN);//Throws UserNotFoundException,if is thrown then user does not exist and can be added. 
+			throw new UserAlreadyExistsException(dN);			
 		}
 		catch(UserNotFoundException ex){
 			if(n.equals("") || s.equals("") || dT.equals("") || dN.equals("") ) {
@@ -51,28 +44,54 @@ public class TurnManager {
 			}
 			users.add(new User(n,s,dT,dN,p,a));
 		}
+		Collections.sort(users,Collections.reverseOrder(new DNComparator()));
 	}
-	/**
-	 * Returns the position of a user in the users list given its document number. Returns -1 if no user was found.
-	 * @param dT Document type
-	 * @param dN Document number
-	 * @return position User position.
-	 */
-	public int findUserByDTDN(String dT, String dN) throws UserNotFoundException{
-		int pos = -1;
-		User tempUser = null;
+	
+	public int findUserByDN(String dN) throws UserNotFoundException{				
+				
+		bubbleSortUsersByDN();
+		
+		int low = 0;
+		int high = users.size()-1;
+		int mid = (low + high)/2;
 		boolean check = false;
-		for(int i = 0; i < users.size() && !check; i++) {
-			tempUser = users.get(i);
-			if (tempUser.getDocumentNumber().equals(dN)) {
+		while (low <= high && !check) {
+			mid = (low + high)/2;
+			if( dN.compareTo(users.get(mid).getDocumentNumber())> 0){
+				low = mid + 1;
+			}
+			else if(dN.compareTo(users.get(mid).getDocumentNumber()) < 0) {
+				high = mid - 1;
+			}
+			else if(dN.compareTo(users.get(mid).getDocumentNumber()) == 0){
 				check = true;
-				pos = i;
+			}
+		}		
+		
+		if (!check) {			
+			throw new UserNotFoundException(dN);			
+		}
+		else {	
+			return mid;
+		}
+	}
+	
+	public void bubbleSortUsersByDN() {
+		User save;
+		DNComparator comparator = new DNComparator();
+		boolean exchange = true;
+		
+		while(exchange) {
+			exchange = false;
+			for (int i = 0; i < users.size()-1;i++) {
+				if (comparator.compare(users.get(i), users.get(i+1)) > 0) {
+					save = users.get(i);
+					users.set(i,users.get(i+1));					
+					users.set(i+1,save);
+					exchange = true;
+				}
 			}
 		}
-		if (pos == -1) {
-			throw new UserNotFoundException(dT,dN);			
-		}
-		return pos;
 	}
 	/**
 	 * Finds a user given a turn, and returns is position, -1 if no user was found.
@@ -90,53 +109,14 @@ public class TurnManager {
 				tempUser = users.get(i);
 				tempTurn = tempUser.getAssignedTurn();
 				
-				if (tempTurn != null && tempTurn.isEqualTurn(turn)) {					
+				if (tempTurn != null && tempTurn.compareTo(turn) == 0) {					
 					check = true;
 					pos = i;									
 				}
 			}			
 		}		
 		return pos;
-	}
-	/**
-	 * Finds next turn given its availability, and returns its position, returns -1 if no turn was found.
-	 * @return position Position, turn position, -1 if no turn was not found.
-	 */
-	public int findNextAvailableTurn() {
-		int pos = -1;
-		Turn tempTurn = null;
-		boolean check = false;
-		
-		if(currentTurn != null && getTurnPos(currentTurn) != turns.size()-1) {
-			for(int i = getTurnPos(currentTurn)+1; i < turns.size() && !check; i++) {
-				tempTurn = turns.get(i);
-				if (tempTurn.isAvailable()) {
-					check = true;
-					pos = i;
-				}
-			}
-			
-			if(pos==-1) {
-				for(int i = 0; i < getTurnPos(currentTurn) && !check; i++) {
-					tempTurn = turns.get(i);
-					if (tempTurn.isAvailable()) {
-						check = true;
-						pos = i;
-					}
-				}
-			}
-		}		
-		else {
-			for(int i = 0; i < turns.size() && !check; i++) {
-				tempTurn = turns.get(i);
-				if (tempTurn.isAvailable()) {
-					check = true;
-					pos = i;
-				}
-			}
-		}		
-		return pos;
-	}
+	}	
 	/**
 	 * Returns the list of the registered users.<br>
 	 * <b>PRE: </b>The users list must be initialized. <br>
@@ -144,25 +124,7 @@ public class TurnManager {
 	 */
 	public ArrayList<User> getUsers(){
 		return users;
-	}
-	/**
-	 * Returns turn position in the turns list given the turn.
-	 * @param turn Turn to get its position.
-	 * @return position Position in the turns list
-	 */
-	public int getTurnPos(Turn turn) {//Change isEqualTurn method to compareTo.
-		int pos = -1;
-		boolean check = false;
-		
-		for(int i = 0; i < turns.size() && !check; i++) {
-			if (turn.isEqualTurn(turns.get(i))) {
-				check = true;
-				pos = i;
-			}
-		}
-		
-		return pos;
-	}
+	}	
 	/**
 	 * 
 	 * @param description
@@ -178,129 +140,101 @@ public class TurnManager {
 	 * @param dN Document number
 	 * @return message Message with turn represented as a String.
 	 * @throws UserNotFoundException If the user with the given document type and number was not found.
+	 * @throws
+	 * @throws
 	 */
-	public String assignTurn(String dT, String dN, int type) throws UserNotFoundException, UserAlreadyHasTurnException, InvalidTypeException{
+	public String assignTurn(String dN, int type) throws NoAvailableTurnsException, UserNotFoundException, UserAlreadyHasTurnException, InvalidTypeException, UserHasRestrictionException{
 		User user;
 		Turn turn;
 		
-		int userPos = findUserByDTDN(dT,dN);		
-		if (userPos != -1) {
+		int userPos = findUserByDN(dN);		
+		user = users.get(userPos);
 			
-			user = users.get(userPos);
-			
-			int turnPos = findNextAvailableTurn();
-			turn = turns.get(turnPos);
-			
-			if(user.getAssignedTurn() == null && turnPos !=-1) {
-				if(type >= 0 && type<types.size()) {
-					turn.setAvailable(false);
-					turn.setType(types.get(type));
-					user.setAssignedTurn(turn);				
-					
-					users.set(userPos,user); //Updates users lists.
-									
-					turns.set(turnPos,turn); //Updates turns lists.
-				}
-				else {
-					throw new InvalidTypeException(type,types.size());
-				}
-					
+		if(rawTurns.get(rawTurnIndex) == null) {
+			throw new NoAvailableTurnsException();
+		}		
+		
+		if(user.getAssignedTurn() == null && user.getRestrictionDuration() == 0) {
+			if(type >= 0 && type < types.size()) {
+				String[] splitTurn = rawTurns.get(rawTurnIndex).split(";");
+				turn = new Turn(splitTurn[0].charAt(0),Integer.parseInt(splitTurn[1]),types.get(type));	
+				user.addPastTurn(turn.toString());
+				turns.add(turn);					
+				user.setAssignedTurn(turn);										
 			}
 			else {
-				throw new UserAlreadyHasTurnException(dT,dN,user.toStringTurn());
+				throw new InvalidTypeException(type,types.size());
 			}
-		}	
-		else {
-			throw new UserNotFoundException(dT,dN);
+				
 		}
-		return user.toStringTurn();
+		else if(user.getRestrictionDuration()>0) {
+			throw new UserHasRestrictionException(user.getRestrictionDuration());
+		}
+		else {
+			throw new UserAlreadyHasTurnException(users.get(userPos).getDocumentNumber(),dN,user.toStringTurn());
+		}
+		
+		
+		if(rawTurnIndex == rawTurns.size()) {
+			rawTurnIndex = 0;
+		}
+		else {
+			rawTurnIndex++;
+		}	
+		return user.toStringTurn();		
 	}
 	/**
 	 * Advances turn to the next one if the next turn is assigned.<br>
 	 * <b>POS:</b><br>1. Updates currentTurn with next turn. <br>2. Updates turns and user lists.
 	 * @throws NoAssignedTurnsException If there are no assigned turns.
 	 */
-	public void advanceTurn() throws NoAssignedTurnsException{
-		User tempUser = null;
-		Turn tempTurn = null;
-		int userPos = -1;
-		int turnPos = -1;
-		
-		if(currentTurn == null && !turns.get(0).isAvailable()) {//When there is no current turn.
-			tempTurn = turns.get(0);
+	public void advanceTurns (double minutes) throws NoAssignedTurnsException{		
+		if(!turns.isEmpty()) {
+			boolean check = false;
+			double c = 0;
+			for(int i = 0; i < turns.size() && !check; i++) {
+				if(c + turns.get(i).getType().getDuration() < minutes) {		
+					int present = (int) Math.round(Math.random());
+					User user = users.get(findUserByTurn(turns.get(i)));
+					user.setAssignedTurn(null);
+					boolean[] attended = user.getAttended();
+					
+					if (present == 0) {						
+						if(attended[0] == false) {
+							attended[1] = false;							
+							user.setRestriction(2);							
+						}
+						else {
+							attended[0] = false;
+						}
+					}
+					else {
+						if(attended[0] == true) {
+							attended[1] = true;
+							
+						}
+						else {
+							attended[0] = true;
+						}
+					}	
+					if(user.getRestrictionDuration() < 0) {
+						user.setRestriction();
+					}
+					currentTurn = turns.get(i);
+					c += turns.get(i).getType().getDuration();
+					turns.remove(0);					
+				}
+				else {
+					check = true;
+				}
+			}		
 			
-			userPos = findUserByTurn(tempTurn);
-			tempUser = users.get(userPos);						
-			tempUser.setAssignedTurn(null);
-			
-			currentTurn = tempTurn;
-			//System.out.println("userPos = " + userPos);
-						
-			users.set(userPos, tempUser);
-			//System.out.println(users.get(0).getName());
-			//System.out.println(users.get(1).getName());
-			//System.out.println(users.get(2).getName());
-			
-		}
-		else if(currentTurn != null 
-				&& !turns.get(getTurnPos(currentTurn)+1).isAvailable() 
-				&& getTurnPos(currentTurn) != turns.size()-1 ) {//When the current turn is not the last.
-			//Gets next turn position
-			turnPos = getTurnPos(currentTurn) + 1;	
-			
-			//Sets to available the previous turn.
-			tempTurn = turns.get(turnPos-1);
-			tempTurn.setAvailable(true);
-			//Updates turns.
-			
-			turns.set(turnPos-1, tempTurn);
-			
-			//Sets tempTurn to the next turn.
-			tempTurn = turns.get(turnPos);
-			
-			//Gets user that has the next turn (Position and user).
-			userPos = findUserByTurn(tempTurn);
-			tempUser = users.get(userPos);						
-			
-			//Sets user assigned turn to null.
-			tempUser.setAssignedTurn(null);
-			//Updates current turn
-			currentTurn = tempTurn;
-			//Updates users
-			
-			users.set(userPos, tempUser);			
-		}
-		else if(currentTurn != null 
-				&& getTurnPos(currentTurn) == turns.size()-1
-				&& !turns.get(0).isAvailable()) {//When the current turn is the last.
-			//Sets previous turn position
-			turnPos = turns.size()-1;	
-			
-			//Sets to available the previous turn.
-			tempTurn = turns.get(turnPos);
-			tempTurn.setAvailable(true);
-			
-			//Updates turns.
-			
-			turns.set(turnPos-1, tempTurn);
-			
-			//Sets tempTurn to the next turn.
-			tempTurn = turns.get(0);
-			
-			//Gets user that has the next turn (Position and user).
-			userPos = findUserByTurn(tempTurn);
-			tempUser = users.get(userPos);						
-			
-			//Sets user assigned turn to null.
-			tempUser.setAssignedTurn(null);
-			//Updates current turn
-			currentTurn = tempTurn;
-			//Updates users			
-			users.set(userPos, tempUser);
 		}
 		else {
+			timeDifference += minutes;
 			throw new NoAssignedTurnsException();
-		}		
+		}
+		timeDifference += minutes;
 	}
 	/**
 	 * Returns the current turn as a String
@@ -345,23 +279,150 @@ public class TurnManager {
 		this.currentTurn = currentTurn;
 	}
 	
-	public void autoUpdateDateTime(int option) {
-		currentDateTime = DateTime.now();
-		currentDateTime.plusMinutes((long)timeDifference);
+	public void autoAdvanceTurns() throws NoAssignedTurnsException{	
+		Date date = Date.now();
+		double dif = currentSystemDate.getDifferenceInMinutes(date);
+		currentSystemDate = date;
+		timeDifference -= dif;
+		advanceTurns(dif);			
+	}	
+
+	public ArrayList<String> getRawTurns() {
+		return rawTurns;
 	}
 	
-	public void manualUpdateDateTime(int year, int month, int day, int hour, int minutes, int seconds)throws DateTimeException {
-		DateTime tempDateTime = new DateTime(year,month,day,hour,minutes,seconds);
+	public String getCurrentDate() {
+		Date date = currentSystemDate.clone();
+		date.plusMinutes(timeDifference);		
+		return date.toString();		
+	}
+	
+	public ArrayList<String> getTypes() {
+		ArrayList<String> strTypes = new ArrayList<String>();
+		for(int i = 0; i < types.size(); i++) {
+			strTypes.add(types.get(i).toString());
+		}
+		return strTypes;
+	}
+	
+	public void generateRandomUsers(int n) throws IOException {	
+		int start = 0;		
 		
-		if (tempDateTime.compareTo(currentDateTime) == 1) {
-			currentDateTime = tempDateTime;
+		if(!users.isEmpty() && users.size()>1) {
+			users.sort(new Comparator<User>() {
+				@Override
+				public int compare(User user1, User user2) {
+					int compare = 0;
+					if(user1.getDocumentNumber().compareTo(user2.getDocumentNumber()) > 1) {
+						compare = 1;
+					}
+					else if(user1.getDocumentNumber().compareTo(user2.getDocumentNumber()) < 1) {
+						compare = -1;
+					}
+					else {
+						compare = 0;
+					}
+					return compare;
+				}
+				
+			});
+			start = Integer.parseInt(users.get(users.size()-1).getDocumentNumber())+1;			
+		}			
+		
+		String[] types = getDocumentTypes();
+		ArrayList<String> names = new ArrayList<String>();
+		ArrayList<String> surnames = new ArrayList<String>();
+		BufferedReader br = new BufferedReader(new FileReader("data//names.csv"));
+		String line = br.readLine();
+		while(line != null){
+			names.add(line);
+			line = br.readLine();
+		}		
+		
+		br.close();
+		br = new BufferedReader(new FileReader("data//surnames.csv"));
+		line = br.readLine();
+		while(line != null){
+			surnames.add(line);
+			line = br.readLine();
+		}		
+		
+		br.close();		
+		
+		for(int i = start; i < n + start;i++) {					
+			users.add(new User(names.get((int)Math.round(Math.random()*999)),
+					surnames.get((int)Math.round(Math.random()*999)),
+					types[((int)Math.round(Math.random()*4))],
+					i + "", 
+					"", 
+					""));
+			
+		}		
+		
+	}
+	
+	public String generateRandomTurns(int number) {
+		boolean check = false;
+		String msg = null;
+		if(!types.isEmpty()) {
+			int i = 0;
+			while(i < users.size() && i < number && !check){			
+				System.out.println("i = " + i);
+				try {
+					assignTurn(users.get(i).getDocumentNumber(),
+							(int)(Math.random()*types.size()));
+				}
+				catch(NoAvailableTurnsException ex){					
+					check = true;
+				}
+				catch(UserAlreadyHasTurnException ex){					
+					number++;
+				}
+				catch(InvalidTypeException | UserNotFoundException | UserHasRestrictionException ex) {
+					//Shouldn't enter here.				
+				}
+				i++;
+			}
+			msg = i + " turns generated!";
 		}
 		else {
-			throw new DateTimeException(currentDateTime, tempDateTime);
+			msg = "0 turns generated!";
 		}
+		return msg;
 	}
 	
+	public String getUserPastTurns(String dN) throws UserNotFoundException {
+		int userPos = findUserByDN(dN);		
+		return users.get(userPos).getPastTurns();		
+	}
 	
+	public void insertionSortUsersByName() {		
+		User save;
+		for (int i = 0; i < users.size();i++) {
+			for (int j = i; j > 0 && users.get(j).getName().compareTo(users.get(j-1).getName()) < 0;j--) {
+				save = users.get(j-1);		
+				users.set(j-1, users.get(j));
+				users.set(j, save);				
+			}
+		}		
+	}
 	
-	
+	public void selectionSortBySurname() {		
+		User minValue = users.get(0);	
+		int minPos = 0;
+		User save;
+		for (int j = 0; j < users.size();j++) {
+			minValue = users.get(j);		
+			for (int i = j; i < users.size();i++) {
+				if(minValue.getSurname().compareTo(users.get(i).getSurname()) >= 0) {			
+					minValue = users.get(i);
+					minPos = i;					
+				}
+			}
+			save = users.get(j);	
+			users.set(j, users.get(minPos));
+			users.set(minPos,save);			
+		}
+		
+	}
 }
